@@ -1,4 +1,5 @@
 from typing import Tuple
+import json
 
 from flask import Flask, jsonify, request, Response
 import mockdb.mockdb_interface as db
@@ -33,6 +34,7 @@ def create_response(
         "message": message,
         "result": data,
     }
+
     return jsonify(response), status
 
 
@@ -64,6 +66,32 @@ def delete_show(id):
 
 
 # TODO: Implement the rest of the API here!
+@app.route("/shows/<id>", methods=['GET'])
+def get_show(id):
+    if db.getById('shows', int(id)) is None:
+        return create_response(status=404, message="No show with this id exists")
+    return create_response({"shows": db.getById('shows', int(id))})
+
+@app.route("/shows", methods=['POST'])
+def create_show():
+    payload = {}
+    payload = json.loads(request.data)
+    if payload['name'] is None or payload['episodes_seen'] is None:
+        return create_response(status=422, message="Missing parameter name or episodes_seen") 
+    db.create('shows', payload)
+    return create_response(status=201, message={"shows": db.getById('shows', payload["id"])}) 
+    
+@app.route("/shows/<id>", methods=['PUT'])
+def update_show(id):
+    payload = {}
+    payload = json.loads(request.data)
+    if db.getById('shows', int(id)) is None:
+        return create_response(status=404, message="No show with this id exists")
+    result = db.updateById('shows', int(id), payload)
+    return create_response(status=201, message={'shows': result})
+
+
+
 
 """
 ~~~~~~~~~~~~ END API ~~~~~~~~~~~~
